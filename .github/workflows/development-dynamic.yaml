@@ -1,0 +1,61 @@
+name: development
+
+on:
+  push:
+    branches:
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+      - '!main'     # excludes main
+
+jobs:
+  get-customer-instances:
+    outputs:
+      matrix: ${{ steps.get-customer-instances.outputs.matrix}}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get Customer Instances
+        id: get-customer-instances
+        uses: replicatedhq/compatibility-actions/get-customer-instances@v0
+        with:
+          app-slug: ${{ secrets.REPLICATED_APP }}
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+
+  compatibility-matrix:
+    needs: get-customer-instances
+    strategy:
+      fail-fast: false
+      matrix:
+        cluster: ${{ fromJson(needs.get-customer-instances.outputs.matrix) }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Define App Version
+        shell: bash
+        run: echo "APP_VERSION=0.0.1-${GITHUB_REF_NAME//[^a-zA-Z0-9]/}.${GITHUB_RUN_ID}${GITHUB_RUN_ATTEMPT}" >> $GITHUB_ENV
+
+      - name: Package Helm Chart for Replicated
+        id: package-helm-chart
+        run: |
+          helm package . -u -d kots \
+            --app-version=0.0.1-${{ github.ref_name }} \
+            --version=${{ env.APP_VERSION }}
+
+      - name: Smoke Test
+        id: smoke-test
+        uses: replicatedhq/compatibility-actions/smoke-test@v0
+        with:
+          app-slug: ${{ secrets.REPLICATED_APP }}
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          yaml-dir: kots
+          kubernetes-distribution: ${{ matrix.cluster.distribution }}
+          kubernetes-version: ${{ matrix.cluster.version }}
+          installation-method: helm
+          test-script: ./tests/test.sh
+          helm-chart-name: dexter-app
+          helm-values: |
+            image:
+              tag: latest
