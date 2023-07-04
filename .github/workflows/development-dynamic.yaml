@@ -18,7 +18,7 @@ jobs:
 
       - name: Get Customer Instances
         id: get-customer-instances
-        uses: replicatedhq/compatibility-actions/get-customer-instances@v0
+        uses: ./get-customer-instances
         with:
           app-slug: ${{ secrets.REPLICATED_APP }}
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
