@@ -25,6 +25,7 @@ jobs:
         helm package . -u -d manifests \
           --app-version=0.0.1-${{ github.ref_name }} \
           --version=${{ env.APP_VERSION }}
+    
     - name: Create Release
       uses: docker://replicated/vendor-cli:latest
       with:

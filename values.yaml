@@ -8,7 +8,8 @@ image:
   tag: 0.6.0
   pullPolicy: IfNotPresent
 
-imagePullSecrets: []
+
+dockerconfigjson: ""
 nameOverride: ""
 fullnameOverride: ""
 
