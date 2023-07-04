@@ -38,13 +38,13 @@ async function run() {
 function processDistributions(usedDistributions: KubernetesDistribution[], availableDistributions: ClusterVersion[]): MatrixInstance[] {
   const matrixMap: { [key: string]: MatrixInstance } = {}
   const availableMap: { [key: string]: ClusterVersion } = {}
-  
+
   core.info(`Found ${availableDistributions.length} available distributions`)
   core.info(`Found ${usedDistributions.length} used distributions`)
-  
+
   for (const ad of availableDistributions) {
     // Used for exact matches
-    const key = (ad.name+'-'+ad.version).toLowerCase()
+    const key = (ad.name + '-' + ad.version).toLowerCase()
     availableMap[key] = ad
 
     // if semver is invalid, skip
@@ -55,11 +55,11 @@ function processDistributions(usedDistributions: KubernetesDistribution[], avail
     }
 
     // Used for distro + semver matches
-    const semverKey = (ad.name+'-'+sversion).toLowerCase()
+    const semverKey = (ad.name + '-' + sversion).toLowerCase()
     availableMap[semverKey] = ad
 
     // Used for distro + semver minor matches
-    const semverMinorKey = (ad.name+'-'+sversion.major+'.'+sversion.minor).toLowerCase()
+    const semverMinorKey = (ad.name + '-' + sversion.major + '.' + sversion.minor).toLowerCase()
     if (availableMap[semverMinorKey]) {
       if (semver.gt(sversion, semver.coerce(availableMap[semverMinorKey].version))) {
         availableMap[semverMinorKey] = ad
@@ -69,7 +69,7 @@ function processDistributions(usedDistributions: KubernetesDistribution[], avail
     }
 
     // Used for distro + semver major matches
-    const semverMajorKey = (ad.name+'-'+sversion.major).toLowerCase()
+    const semverMajorKey = (ad.name + '-' + sversion.major).toLowerCase()
     if (availableMap[semverMajorKey]) {
       if (semver.gt(sversion, semver.coerce(availableMap[semverMajorKey].version))) {
         availableMap[semverMajorKey] = ad
@@ -81,9 +81,14 @@ function processDistributions(usedDistributions: KubernetesDistribution[], avail
   }
   for (const ud of usedDistributions) {
     // Exact match for distribution and version
-    const key = (ud.k8sDistribution+'-'+ud.k8sVersion).toLowerCase()
+    if (!ud.k8sDistribution) {
+      core.info(`Used distribution ${ud.k8sDistribution} has no distribution`)
+      continue
+    }
+
+    const key = (ud.k8sDistribution + '-' + ud.k8sVersion).toLowerCase()
     if (availableMap[key]) {
-      const matrixKey = availableMap[key].name+'-'+availableMap[key].version
+      const matrixKey = availableMap[key].name + '-' + availableMap[key].version
       matrixMap[matrixKey] = { distribution: availableMap[key].name, version: availableMap[key].version }
       continue
     }
@@ -96,31 +101,31 @@ function processDistributions(usedDistributions: KubernetesDistribution[], avail
     }
 
     // Exact match for distribution, but using semver
-    const semverKey = (ud.k8sDistribution+'-'+sversion).toLowerCase()
+    const semverKey = (ud.k8sDistribution + '-' + sversion).toLowerCase()
     if (availableMap[semverKey]) {
-      const matrixKey = availableMap[semverKey].name+'-'+availableMap[semverKey].version
+      const matrixKey = availableMap[semverKey].name + '-' + availableMap[semverKey].version
       matrixMap[matrixKey] = { distribution: availableMap[semverKey].name, version: availableMap[semverKey].version }
       continue
     }
 
     // Exact match for distribution, but using up to minor version
-    const semverMinorKey = (ud.k8sDistribution+'-'+sversion.major+'.'+sversion.minor).toLowerCase()
+    const semverMinorKey = (ud.k8sDistribution + '-' + sversion.major + '.' + sversion.minor).toLowerCase()
     if (availableMap[semverMinorKey]) {
-      const matrixKey = availableMap[semverMinorKey].name+'-'+availableMap[semverMinorKey].version
+      const matrixKey = availableMap[semverMinorKey].name + '-' + availableMap[semverMinorKey].version
       matrixMap[matrixKey] = { distribution: availableMap[semverMinorKey].name, version: availableMap[semverMinorKey].version }
       continue
     }
 
     // Exact match for distribution, but using up to major version
-    const semverMajorKey = (ud.k8sDistribution+'-'+sversion.major).toLowerCase()
+    const semverMajorKey = (ud.k8sDistribution + '-' + sversion.major).toLowerCase()
     if (availableMap[semverMajorKey]) {
-      const matrixKey = availableMap[semverMajorKey].name+'-'+availableMap[semverMajorKey].version
+      const matrixKey = availableMap[semverMajorKey].name + '-' + availableMap[semverMajorKey].version
       matrixMap[matrixKey] = { distribution: availableMap[semverMajorKey].name, version: availableMap[semverMajorKey].version }
       continue
     }
   }
 
-  const matrix: MatrixInstance[] =  Object.values(matrixMap).map((value) => {
+  const matrix: MatrixInstance[] = Object.values(matrixMap).map((value) => {
     return value;
   });
   return matrix

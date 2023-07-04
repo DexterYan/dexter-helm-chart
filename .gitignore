@@ -1,2 +1,4 @@
 .env
 Chart.lock
+node_modules
+build

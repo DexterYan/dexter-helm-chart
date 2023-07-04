@@ -83,6 +83,10 @@ function processDistributions(usedDistributions, availableDistributions) {
     }
     for (const ud of usedDistributions) {
         // Exact match for distribution and version
+        if (!ud.k8sDistribution) {
+            core.info(`Used distribution ${ud.k8sDistribution} has no distribution`);
+            continue;
+        }
         const key = (ud.k8sDistribution + '-' + ud.k8sVersion).toLowerCase();
         if (availableMap[key]) {
             const matrixKey = availableMap[key].name + '-' + availableMap[key].version;
